@@ -1,5 +1,7 @@
 import streamlit as st
 from groq import Groq
+from streamlit_mic_recorder import mic_recorder
+import io
 
 # ─── إعداد الصفحة ───────────────────────────────────────────────────────────
 st.set_page_config(
@@ -88,47 +90,69 @@ def get_client():
 
 # ─── تهيئة المحادثة ───────────────────────────────────────────────────────────
 if "messages" not in st.session_state:
-    st.session_state.messages = []
-    st.session_state.messages.append({
+    st.session_state.messages = [{
         "role": "assistant",
         "content": "أهلاً! أنا جيزا، مساعدك الذكي لمحافظة الجيزة 🏛️ كيف أقدر أساعدك النهارده؟"
-    })
+    }]
+
+if "last_audio_id" not in st.session_state:
+    st.session_state.last_audio_id = None
+
+# ─── دالة إرسال الرسالة ──────────────────────────────────────────────────────
+def send_message(prompt):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    client = get_client()
+    messages_for_api = [{"role": "system", "content": SYSTEM_PROMPT}]
+    messages_for_api += [
+        {"role": m["role"], "content": m["content"]}
+        for m in st.session_state.messages
+    ]
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=messages_for_api,
+        temperature=0.7,
+        max_tokens=500
+    )
+    reply = response.choices[0].message.content
+    st.session_state.messages.append({"role": "assistant", "content": reply})
 
 # ─── عرض المحادثة ─────────────────────────────────────────────────────────────
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# ─── إدخال المستخدم ───────────────────────────────────────────────────────────
-if prompt := st.chat_input("اكتب سؤالك هنا..."):
-    # أضف رسالة المستخدم
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+# ─── الميكروفون ──────────────────────────────────────────────────────────────
+st.markdown("##### 🎤 أو تكلم مع جيزا:")
+audio = mic_recorder(
+    start_prompt="🎤 اضغط وتكلم",
+    stop_prompt="⏹️ وقّف التسجيل",
+    just_once=True,
+    use_container_width=True,
+    key="mic"
+)
 
-    # اطلب الرد من Groq
-    with st.chat_message("assistant"):
-        with st.spinner("جيزا بتفكر..."):
-            client = get_client()
-            
-            # ابني تاريخ المحادثة
-            messages_for_api = [{"role": "system", "content": SYSTEM_PROMPT}]
-            messages_for_api += [
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ]
-            
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=messages_for_api,
-                temperature=0.7,
-                max_tokens=500
-            )
-            
-            reply = response.choices[0].message.content
-            st.markdown(reply)
-    
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+if audio and audio["id"] != st.session_state.last_audio_id:
+    st.session_state.last_audio_id = audio["id"]
+    with st.spinner("جيزا بتسمعك..."):
+        client = get_client()
+        audio_bytes = io.BytesIO(audio["bytes"])
+        audio_bytes.name = "audio.wav"
+        transcription = client.audio.transcriptions.create(
+            model="whisper-large-v3",
+            file=audio_bytes,
+            language="ar"
+        )
+        prompt = transcription.text
+        if prompt.strip():
+            st.info(f"قلت: {prompt}")
+            send_message(prompt)
+            st.rerun()
+
+# ─── إدخال النص ───────────────────────────────────────────────────────────────
+if prompt := st.chat_input("اكتب سؤالك هنا..."):
+    with st.spinner("جيزا بتفكر..."):
+        send_message(prompt)
+    st.rerun()
 
 # ─── زر مسح المحادثة ─────────────────────────────────────────────────────────
 if len(st.session_state.messages) > 1:
@@ -137,4 +161,5 @@ if len(st.session_state.messages) > 1:
             "role": "assistant",
             "content": "أهلاً! أنا جيزا، مساعدك الذكي لمحافظة الجيزة 🏛️ كيف أقدر أساعدك النهارده؟"
         }]
+        st.session_state.last_audio_id = None
         st.rerun()
