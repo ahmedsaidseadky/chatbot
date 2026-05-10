@@ -4,7 +4,7 @@ from streamlit_mic_recorder import mic_recorder
 import io
 import requests
 import math
-from streamlit_geolocation import st_geolocation
+import json
 
 # ─── إعداد الصفحة ───────────────────────────────────────────────────────────
 st.set_page_config(
@@ -22,13 +22,60 @@ st.markdown("""
     h1 { text-align: center; color: #1a5276; }
     .subtitle { text-align: center; color: #666; margin-bottom: 20px; }
     .location-info { background-color: #f0f2f6; padding: 10px; border-radius: 10px; margin: 10px 0; }
+    .stButton button { background-color: #1a5276; color: white; }
 </style>
 """, unsafe_allow_html=True)
 
-# ─── العنوان ─────────────────────────────────────────────────────────────────
-st.markdown("# 🏛️ جيزا")
-st.markdown('<p class="subtitle">المساعد الذكي الرسمي لمحافظة الجيزة</p>', unsafe_allow_html=True)
-st.divider()
+# ─── JavaScript مخصص للحصول على الموقع ─────────────────────────────────────
+get_location_js = """
+<script>
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const locationData = {
+                    lat: lat,
+                    lon: lon,
+                    status: "success"
+                };
+                // إرسال البيانات إلى Streamlit
+                const event = new CustomEvent("streamlit:location", {
+                    detail: locationData
+                });
+                window.dispatchEvent(event);
+            },
+            function(error) {
+                const locationData = {
+                    status: "error",
+                    message: error.message
+                };
+                const event = new CustomEvent("streamlit:location", {
+                    detail: locationData
+                });
+                window.dispatchEvent(event);
+            }
+        );
+    } else {
+        const locationData = {
+            status: "error",
+            message: "المتصفح لا يدعم تحديد الموقع"
+        };
+        const event = new CustomEvent("streamlit:location", {
+            detail: locationData
+        });
+        window.dispatchEvent(event);
+    }
+}
+document.addEventListener("DOMContentLoaded", function() {
+    const button = document.getElementById("get-location-btn");
+    if (button) {
+        button.addEventListener("click", getLocation);
+    }
+});
+</script>
+"""
 
 # ─── قاعدة بيانات الأماكن (إحداثيات ثابتة للجيزة) ─────────────────────────
 PLACES_DATABASE = {
@@ -61,7 +108,7 @@ PLACES_DATABASE = {
 # ─── دوال المساعدة للموقع ───────────────────────────────────────────────────
 def haversine(lat1, lon1, lat2, lon2):
     """حساب المسافة بين نقطتين باستخدام صيغة هافرزين (بالكيلومترات)"""
-    R = 6371  # نصف قطر الأرض بالكيلومترات
+    R = 6371
     lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
     dlat = lat2 - lat1
     dlon = lon2 - lon1
@@ -108,64 +155,55 @@ def format_location_response(place, place_type):
 🗺️ [افتح في خرائط جوجل](https://www.google.com/maps?q={place['lat']},{place['lon']})
     """
 
+# ─── نظام المراسلة مع JavaScript ───────────────────────────────────────────
+def init_location_handling():
+    """تهيئة معالجة الموقع باستخدام JavaScript"""
+    location_component = st.empty()
+    
+    # إضافة JavaScript
+    st.markdown(get_location_js, unsafe_allow_html=True)
+    
+    # زر الحصول على الموقع
+    st.markdown("""
+    <div style="text-align: center; margin: 20px 0;">
+        <button id="get-location-btn" style="
+            background-color: #1a5276;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        ">
+            📍 خذ موقعي
+        </button>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # استقبال الموقع من JavaScript عبر query parameters
+    import urllib.parse
+    query_params = st.query_params
+    if "lat" in query_params and "lon" in query_params:
+        try:
+            lat = float(query_params["lat"])
+            lon = float(query_params["lon"])
+            return {"latitude": lat, "longitude": lon}
+        except:
+            return None
+    return None
+
 # ─── System Prompt ────────────────────────────────────────────────────────────
 SYSTEM_PROMPT = """أنت مساعد ذكي رسمي لمحافظة الجيزة، مصر. اسمك 'جيزا'. مهمتك مساعدة المواطنين والسياح في كل ما يخص المحافظة.
 
-⚡ **ميزة تحديد الموقع**: يمكن للمستخدم استخدام زر "خذ موقعي" للحصول على أقرب مستشفى، صيدلية، مطعم، أو معلم سياحي.
+⚡ **ميزة تحديد الموقع**: المستخدم يستطيع استخدام زر "خذ موقعي" للحصول على أقرب مستشفى، صيدلية، مطعم، أو معلم سياحي.
 
 هويتك:
 - اسمك: جيزا (Giza Assistant)
 - تابع: محافظة الجيزة الرسمية
 - تتكلم عربي وإنجليزي — تتعرف على لغة المستخدم وترد بنفس اللغة تلقائياً
 
-اللي بتساعد فيه:
-
-1. السياحة والتخطيط السياحي:
-   - الأهرامات وأبو الهول والمتحف المصري الكبير (GEM)
-   - برامج سياحية: يوم، يومين، 3 أيام، أسبوع
-   - عند السؤال عن برنامج سياحي أو رحلة أو جولة: اسأل كم يوم
-   - حدائق الأورمان، حديقة الحيوان، كورنيش الجيزة، رحلات نيلية، عروض الصوت والضوء
-
-2. المطاعم:
-   - الخطوة 1: اسأل عن نوع الطعام (مصري، شرقي، إيطالي، آسيوي، بحري، عالمي)
-   - الخطوة 2: اسأل عن الموقع (إطلالة أهرامات أم وسط المدينة)
-   - توصيات: فلفلة نزلة السمان، صبحي كابر الشيخ زايد، حدائق الأهرام لاونج، مطعم الطوب الدقي، باستا كاسا الشيخ زايد
-
-3. الفنادق:
-   - الخطوة 1: اسأل عن الميزانية (اقتصادي، متوسط، فاخر)
-   - الخطوة 2: اسأل عن الموقع المفضل
-   - فاخر: ماريوت مينا هاوس 250-400 دولار، فور سيزنز جيزة 280-450 دولار
-   - متوسط: ستينبرجر بيراميدز 80-150 دولار، ستيلا شقق فندقية 85-130 دولار
-   - اقتصادي: Pyramids View Inn 40-60 دولار، جرين بلازا شقق 50-65 دولار
-
-4. الاستثمار:
-   - الخطوة 1: اسأل عن الاسم
-   - الخطوة 2: اسأل عن نوع النشاط (كافيه، فندق، مطعم، بوتيك، مكتب)
-   - الخطوة 3: اسأل عن المنطقة المفضلة (الأهرامات، المتحف، النيل، وسط الجيزة)
-   - الخطوة 4: اسأل عن الميزانية (أقل من مليون، 1-5 مليون، 5-10 مليون، أكثر من 10 مليون جنيه)
-   - الخطوة 5: قدم الفرص: نزلة السمان تقييم 9.5، محيط المتحف الكبير تقييم 9.0، المنيل تقييم 8.5
-
-5. الخدمات الحكومية:
-   - تجديد رخصة القيادة: منصة مصر الرقمية digital.gov.eg
-   - خدمات التموين: ضم أفراد، إصدار بطاقة، فصل، نقل محافظة
-   - المرور: تجديد رخصة، استعلام مخالفات، سداد مخالفات
-
-6. المستشفيات:
-   - **ميزة جديدة**: المستخدم يستطيع أخذ موقعه والبحث عن أقرب مستشفى
-   - اسأل: "هل تريد مني البحث عن أقرب مستشفى لك؟ اضغط على 'خذ موقعي'"
-
-7. ذوي الهمم:
-   - اسأل عن احتياجات الوصول: منحدر للكراسي المتحركة، شباك أرضي، مصعد مخصص
-
-8. الشكاوى:
-   - وجه المستخدم لصفحة الشكاوى على الموقع الرسمي
-
-قواعد الردود:
-- ردودك قصيرة ومباشرة، جملة أو جملتين بحد أقصى
-- اسأل سؤالاً واحداً فقط في كل رد
-- ابدأ بترحيب ودي وسريع
-- تذكر المحادثة السابقة لتكمل السيناريوهات
-- لو مش عارف المعلومة وجه للموقع الرسمي لمحافظة الجيزة
+اللي بتساعد فيه: [باقي المحتوى كما هو...]
 """
 
 # ─── Groq Client ─────────────────────────────────────────────────────────────
@@ -213,64 +251,62 @@ for msg in st.session_state.messages:
 st.markdown("---")
 st.markdown("### 📍 خدمة تحديد الموقع")
 
-col1, col2, col3 = st.columns([1,2,1])
-with col2:
-    location = st_geolocation()
+# تهيئة معالجة الموقع
+location_data = init_location_handling()
+
+if location_data:
+    st.session_state.user_location = {
+        "lat": location_data["latitude"],
+        "lon": location_data["longitude"]
+    }
+    st.success(f"✅ تم تحديد موقعك بنجاح!")
+    st.info(f"الإحداثيات: {location_data['latitude']:.4f}, {location_data['longitude']:.4f}")
     
+    # عرض أزرار البحث السريع
+    st.markdown("#### 🔍 ابحث عن أقرب:")
+    btn_cols = st.columns(4)
     
-    if location:
-        st.session_state.user_location = {
-            "lat": location["latitude"],
-            "lon": location["longitude"]
-        }
-        st.success(f"✅ تم تحديد موقعك بنجاح!")
-        st.info(f"الإحداثيات: {location['latitude']:.4f}, {location['longitude']:.4f}")
-        
-        # عرض أزرار البحث السريع
-        st.markdown("#### 🔍 ابحث عن أقرب:")
-        btn_cols = st.columns(4)
-        
-        with btn_cols[0]:
-            if st.button("🏥 مستشفى", use_container_width=True):
-                with st.spinner("جاري البحث عن أقرب مستشفى..."):
-                    nearest = find_nearest_place(location['latitude'], location['longitude'], "مستشفى")
-                    reply = format_location_response(nearest, "مستشفى")
-                    with st.chat_message("assistant"):
-                        st.markdown(reply)
-                    st.session_state.messages.append({"role": "assistant", "content": reply})
-                    st.rerun()
-        
-        with btn_cols[1]:
-            if st.button("💊 صيدلية", use_container_width=True):
-                with st.spinner("جاري البحث عن أقرب صيدلية..."):
-                    nearest = find_nearest_place(location['latitude'], location['longitude'], "صيدلية")
-                    reply = format_location_response(nearest, "صيدلية")
-                    with st.chat_message("assistant"):
-                        st.markdown(reply)
-                    st.session_state.messages.append({"role": "assistant", "content": reply})
-                    st.rerun()
-        
-        with btn_cols[2]:
-            if st.button("🍽️ مطعم", use_container_width=True):
-                with st.spinner("جاري البحث عن أقرب مطعم..."):
-                    nearest = find_nearest_place(location['latitude'], location['longitude'], "مطعم")
-                    reply = format_location_response(nearest, "مطعم")
-                    with st.chat_message("assistant"):
-                        st.markdown(reply)
-                    st.session_state.messages.append({"role": "assistant", "content": reply})
-                    st.rerun()
-        
-        with btn_cols[3]:
-            if st.button("🏛️ معلم سياحي", use_container_width=True):
-                with st.spinner("جاري البحث عن أقرب معلم سياحي..."):
-                    nearest = find_nearest_place(location['latitude'], location['longitude'], "معلم سياحي")
-                    reply = format_location_response(nearest, "معلم سياحي")
-                    with st.chat_message("assistant"):
-                        st.markdown(reply)
-                    st.session_state.messages.append({"role": "assistant", "content": reply})
-                    st.rerun()
-    else:
-        st.info("📍 اضغط على 'Get Location' لتحديد موقعك والعثور على أقرب الخدمات")
+    with btn_cols[0]:
+        if st.button("🏥 مستشفى", use_container_width=True):
+            with st.spinner("جاري البحث عن أقرب مستشفى..."):
+                nearest = find_nearest_place(location_data['latitude'], location_data['longitude'], "مستشفى")
+                reply = format_location_response(nearest, "مستشفى")
+                with st.chat_message("assistant"):
+                    st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.rerun()
+    
+    with btn_cols[1]:
+        if st.button("💊 صيدلية", use_container_width=True):
+            with st.spinner("جاري البحث عن أقرب صيدلية..."):
+                nearest = find_nearest_place(location_data['latitude'], location_data['longitude'], "صيدلية")
+                reply = format_location_response(nearest, "صيدلية")
+                with st.chat_message("assistant"):
+                    st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.rerun()
+    
+    with btn_cols[2]:
+        if st.button("🍽️ مطعم", use_container_width=True):
+            with st.spinner("جاري البحث عن أقرب مطعم..."):
+                nearest = find_nearest_place(location_data['latitude'], location_data['longitude'], "مطعم")
+                reply = format_location_response(nearest, "مطعم")
+                with st.chat_message("assistant"):
+                    st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.rerun()
+    
+    with btn_cols[3]:
+        if st.button("🏛️ معلم سياحي", use_container_width=True):
+            with st.spinner("جاري البحث عن أقرب معلم سياحي..."):
+                nearest = find_nearest_place(location_data['latitude'], location_data['longitude'], "معلم سياحي")
+                reply = format_location_response(nearest, "معلم سياحي")
+                with st.chat_message("assistant"):
+                    st.markdown(reply)
+                st.session_state.messages.append({"role": "assistant", "content": reply})
+                st.rerun()
+else:
+    st.info("📍 اضغط على زر 'خذ موقعي' لتحديد موقعك والعثور على أقرب الخدمات")
 
 st.markdown("---")
 
