@@ -24,9 +24,9 @@ st.markdown("""
     --gold-light: #f0c85a;
     --bg:         #f0f4f8;
 }
-.tabs-scroll {
-    display: none !important;
-}
+# .tabs-scroll {
+#     display: none !important;
+# }
 * { font-family: 'Cairo', sans-serif !important; box-sizing: border-box; }
 html, body, .stApp { direction: rtl; background: var(--bg); }
 #MainMenu, footer, header, .stDeployButton,
