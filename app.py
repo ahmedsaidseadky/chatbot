@@ -25,7 +25,7 @@ st.markdown("""
     --bg:         #f0f4f8;
 }
 .tabs-scroll {
-    display: none;
+    display: none !important;
 }
 * { font-family: 'Cairo', sans-serif !important; box-sizing: border-box; }
 html, body, .stApp { direction: rtl; background: var(--bg); }
