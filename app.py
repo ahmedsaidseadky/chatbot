@@ -21,15 +21,12 @@ st.markdown("""
     --blue-light: #2e7fc1;
     --gold:       #c9a84c;
     --gold-light: #f0c85a;
-    --white:      #ffffff;
     --bg:         #f0f4f8;
     --radius:     16px;
 }
 
 * { font-family: 'Cairo', sans-serif !important; box-sizing: border-box; }
 html, body, .stApp { direction: rtl; background: var(--bg); margin: 0; padding: 0; }
-
-/* إخفاء عناصر Streamlit الافتراضية */
 #MainMenu, footer, header, .stDeployButton,
 [data-testid="stToolbar"], [data-testid="stDecoration"] { display: none !important; }
 
@@ -40,200 +37,112 @@ html, body, .stApp { direction: rtl; background: var(--bg); margin: 0; padding: 
     border-radius: 0 0 24px 24px;
     margin: -1rem -1rem 0 -1rem;
     text-align: center;
-    position: relative;
     box-shadow: 0 4px 20px rgba(10,35,66,0.3);
 }
-.giza-header h1 {
-    color: var(--gold-light);
-    font-size: 1.4rem;
-    font-weight: 900;
-    margin: 0;
-    letter-spacing: 1px;
-}
-.giza-header p {
-    color: rgba(255,255,255,0.75);
-    font-size: 0.78rem;
-    margin: 3px 0 0 0;
-}
-.giza-logo {
-    font-size: 2rem;
-    margin-bottom: 4px;
+.giza-header h1 { color: var(--gold-light); font-size: 1.4rem; font-weight: 900; margin: 0; }
+.giza-header p  { color: rgba(255,255,255,0.75); font-size: 0.78rem; margin: 3px 0 0 0; }
+
+/* التابات - إخفاء buttons الافتراضية */
+div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] > div > div > button {
+    display: none !important;
 }
 
-/* التابات */
-.tabs-container {
+/* تنسيق التابات المخصصة */
+.tabs-scroll {
     display: flex;
     gap: 8px;
     overflow-x: auto;
-    padding: 14px 4px 6px;
+    padding: 12px 4px 8px;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    direction: rtl;
 }
-.tabs-container::-webkit-scrollbar { display: none; }
+.tabs-scroll::-webkit-scrollbar { display: none; }
 
-.tab-btn {
+.tab-pill {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: white;
-    border: 1.5px solid #dde3ec;
     border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--blue-dark);
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
-    transition: all 0.2s;
+    transition: all 0.25s ease;
+    border: 2px solid transparent;
+    user-select: none;
+}
+
+.tab-pill.inactive {
+    background: white;
+    color: var(--blue-dark);
+    border-color: #dde3ec;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
-.tab-btn:hover {
-    background: var(--blue-mid);
-    color: white;
-    border-color: var(--blue-mid);
+.tab-pill.inactive:hover {
+    background: #e8f0fa;
+    border-color: var(--blue-light);
 }
-.tab-btn.active {
+
+.tab-pill.active {
     background: var(--blue-dark);
     color: var(--gold-light);
-    border-color: var(--blue-dark);
+    border-color: var(--gold);
+    box-shadow: 0 3px 12px rgba(10,35,66,0.25);
 }
 
-/* منطقة الشات */
-.chat-area {
-    padding: 10px 4px;
-    min-height: 350px;
-}
-
-/* فقاعات الرسائل */
+/* رسائل الشات */
 .stChatMessage { direction: rtl; margin-bottom: 10px; }
 [data-testid="stChatMessageContent"] {
-    direction: rtl;
-    text-align: right;
+    direction: rtl; text-align: right;
     border-radius: var(--radius) !important;
-    font-size: 0.92rem;
-    line-height: 1.7;
+    font-size: 0.92rem; line-height: 1.7;
 }
-
-/* رسائل البوت */
 [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"]) [data-testid="stChatMessageContent"] {
     background: white !important;
     border: 1px solid #e0e7f0;
     box-shadow: 0 2px 8px rgba(10,35,66,0.07);
 }
-
-/* رسائل المستخدم */
 [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) [data-testid="stChatMessageContent"] {
     background: linear-gradient(135deg, var(--blue-dark), var(--blue-mid)) !important;
     color: white !important;
 }
 
-/* شريط الإدخال السفلي */
-.bottom-bar {
-    position: sticky;
-    bottom: 0;
-    background: white;
-    border-top: 1px solid #e0e7f0;
-    padding: 10px 8px;
-    margin: 10px -1rem -1rem -1rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.08);
-}
-
-/* chat input تخصيص */
-.stChatInput {
-    border-radius: 25px !important;
-}
-.stChatInput > div {
-    border-radius: 25px !important;
-    border: 1.5px solid #dde3ec !important;
-    background: #f8fafc !important;
-}
-
 /* زرار الموقع */
-.loc-bar {
-    background: linear-gradient(90deg, #e8f0fa, #f5f0e0);
-    border-radius: 12px;
-    padding: 8px 14px;
-    margin: 8px 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border: 1px solid #dde3ec;
-}
-
-/* Mic recorder تنسيق */
-.mic-wrapper button {
-    border-radius: 50% !important;
-    width: 42px !important;
-    height: 42px !important;
-    background: var(--gold) !important;
-    border: none !important;
-    font-size: 1.1rem !important;
-}
-
-/* الشارة الذهبية */
-.gold-badge {
-    display: inline-block;
-    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+div[data-testid="stButton"] > button[kind="secondary"] {
+    border-radius: 20px;
+    border: 1.5px solid var(--blue-light);
     color: var(--blue-dark);
-    font-size: 0.7rem;
     font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 10px;
-    margin-right: 6px;
-}
-
-/* Quick reply chips */
-.chip {
-    display: inline-block;
-    background: #e8f0fa;
-    border: 1px solid #c5d5ea;
-    color: var(--blue-dark);
-    border-radius: 15px;
-    padding: 4px 12px;
-    font-size: 0.8rem;
-    margin: 3px;
-    cursor: pointer;
+    font-size: 0.85rem;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ─── System Prompt ────────────────────────────────────────────────────────────
 SYSTEM_PROMPT = """أنت مساعد ذكي رسمي لمحافظة الجيزة، مصر. اسمك 'جيزا'.
-
-هويتك: مساعد رسمي لمحافظة الجيزة، تتكلم عربي وإنجليزي وترد بنفس لغة المستخدم.
+تتكلم عربي وإنجليزي وترد بنفس لغة المستخدم.
 
 الخدمات:
-1. السياحة: الأهرامات، أبو الهول، المتحف المصري الكبير GEM، برامج سياحية يوم/يومين/3 أيام/أسبوع، حدائق الأورمان، حديقة الحيوان، كورنيش الجيزة، عروض الصوت والضوء
-
-2. المطاعم: اسأل نوع الطعام ثم الموقع. توصيات: فلفلة نزلة السمان، صبحي كابر الشيخ زايد، حدائق الأهرام لاونج، مطعم الطوب الدقي، باستا كاسا الشيخ زايد
-
-3. الفنادق: اسأل الميزانية ثم الموقع. فاخر: ماريوت مينا هاوس 250-400$، فور سيزنز 280-450$. متوسط: ستينبرجر بيراميدز 80-150$. اقتصادي: Pyramids View Inn 40-60$
-
+1. السياحة: الأهرامات، أبو الهول، المتحف المصري الكبير GEM، برامج سياحية يوم/يومين/3 أيام/أسبوع
+2. المطاعم: اسأل نوع الطعام ثم الموقع. توصيات: فلفلة نزلة السمان، صبحي كابر، حدائق الأهرام لاونج، مطعم الطوب، باستا كاسا
+3. الفنادق: اسأل الميزانية ثم الموقع. فاخر: ماريوت مينا هاوس، فور سيزنز. متوسط: ستينبرجر بيراميدز. اقتصادي: Pyramids View Inn
 4. الاستثمار: اسأل الاسم ثم النشاط ثم المنطقة ثم الميزانية ثم قدم الفرص
-
 5. الخدمات الحكومية: رخص القيادة على digital.gov.eg، التموين، المرور
-
 6. المستشفيات: الجيزة العام، أم المصريين، الشيخ زايد التخصصي، العجوزة العام، الهرم العام
-
 7. ذوي الهمم: منحدر كراسي، شباك أرضي، مصعد مخصص
 
-8. الشكاوى: الموقع الرسمي لمحافظة الجيزة
-
-قاعدة الموقع الجغرافي (مهمة جداً):
+قاعدة الموقع الجغرافي:
 - لو المستخدم أرسل إحداثياته (lat, lng)، استخدمها في روابط Google Maps
 - للمستشفيات: https://www.google.com/maps/search/مستشفى/@LAT,LNG,15z
 - للمطاعم: https://www.google.com/maps/search/مطعم/@LAT,LNG,15z
 - للفنادق: https://www.google.com/maps/search/فندق/@LAT,LNG,15z
-- للصيدليات: https://www.google.com/maps/search/صيدلية/@LAT,LNG,15z
-- استبدل LAT وLNG بالإحداثيات الحقيقية دائماً
+- استبدل LAT وLNG بالإحداثيات الحقيقية
 
 قواعد الردود:
 - جملة أو جملتين بحد أقصى
 - سؤال واحد فقط في كل رد
-- لا إيموجي كثيرة
 - لغة طبيعية ودية
 - تذكر المحادثة السابقة"""
 
@@ -242,22 +151,22 @@ TABS = [
     ("🏛️", "السياحة"),
     ("📈", "الاستثمار"),
     ("💻", "مصر الرقمية"),
-    ("🍽️", "مطاعم"),
+    ("🍽️", "مطاعم قريبة"),
     ("🏨", "فنادق"),
     ("♿", "ذوي الهمم"),
 ]
 
 TAB_PROMPTS = {
-    "مستشفيات": "أقرب مستشفى ليا",
-    "السياحة": "عايز برنامج سياحي",
-    "الاستثمار": "عايز أعرف عن فرص الاستثمار",
+    "مستشفيات":     "أقرب مستشفى ليا",
+    "السياحة":      "عايز برنامج سياحي",
+    "الاستثمار":    "عايز أعرف فرص الاستثمار في الجيزة",
     "مصر الرقمية": "عايز أعرف خدمات مصر الرقمية",
-    "مطاعم": "عايز أعرف مطاعم قريبة",
-    "فنادق": "عايز أعرف فنادق قريبة",
-    "ذوي الهمم": "عايز خدمات ذوي الهمم",
+    "مطاعم قريبة": "عايز مطاعم قريبة مني",
+    "فنادق":        "عايز فنادق قريبة",
+    "ذوي الهمم":   "عايز خدمات ذوي الهمم",
 }
 
-# ─── Groq Client ─────────────────────────────────────────────────────────────
+# ─── Groq ────────────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_client():
     return Groq(api_key=st.secrets["GROQ_API_KEY"])
@@ -278,36 +187,45 @@ if "active_tab" not in st.session_state:
 # ─── الهيدر ──────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="giza-header">
-    <div class="giza-logo">🏛️</div>
-    <h1>مساعد الجيزة الذكي ✨</h1>
-    <p>خدمات محافظة الجيزة · الاستثمار · السياحة · الخدمات الحكومية</p>
+    <div style="font-size:2rem">🏛️</div>
+    <h1>مساعدك الذكي ✨</h1>
+    <p>محافظة الجيزة · استثمار · سياحة · خدمات حكومية</p>
 </div>
 """, unsafe_allow_html=True)
 
-# ─── التابات ──────────────────────────────────────────────────────────────────
-tabs_html = '<div class="tabs-container">'
+# ─── التابات بـ HTML + JS ─────────────────────────────────────────────────────
+tabs_html = '<div class="tabs-scroll">'
 for icon, label in TABS:
-    active = "active" if st.session_state.active_tab == label else ""
-    tabs_html += f'<span class="tab-btn {active}">{icon} {label}</span>'
+    css_class = "active" if st.session_state.active_tab == label else "inactive"
+    tabs_html += f'''<div class="tab-pill {css_class}" onclick="
+        window.parent.document.querySelectorAll('[data-tab-id]').forEach(b => b.click());
+    ">{icon} {label}</div>'''
 tabs_html += '</div>'
 st.markdown(tabs_html, unsafe_allow_html=True)
 
-# تابات كـ Streamlit buttons في صف
+# أزرار مخفية للتابات
 tab_cols = st.columns(len(TABS))
 for i, (icon, label) in enumerate(TABS):
     with tab_cols[i]:
-        if st.button(f"{icon}", key=f"tab_{label}", help=label, use_container_width=True):
+        if st.button(label, key=f"tab_{label}", use_container_width=True):
             st.session_state.active_tab = label
             prompt_text = TAB_PROMPTS.get(label, label)
-            st.session_state.messages.append({"role": "user", "content": prompt_text})
-            client = get_client()
-            msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+            full_prompt = prompt_text
             if st.session_state.location:
                 lat = st.session_state.location["lat"]
                 lng = st.session_state.location["lng"]
-                msgs.append({"role": "user", "content": f"{prompt_text}\n[موقع المستخدم: lat={lat}, lng={lng}]"})
-            else:
-                msgs += [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
+                full_prompt = f"{prompt_text}\n[موقع المستخدم: lat={lat}, lng={lng}]"
+
+            st.session_state.messages.append({"role": "user", "content": prompt_text})
+            client = get_client()
+            msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
+            for j, m in enumerate(st.session_state.messages):
+                if j == len(st.session_state.messages) - 1:
+                    msgs.append({"role": "user", "content": full_prompt})
+                else:
+                    msgs.append({"role": m["role"], "content": m["content"]})
+
             resp = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=msgs,
@@ -317,12 +235,27 @@ for i, (icon, label) in enumerate(TABS):
             st.session_state.messages.append({"role": "assistant", "content": resp.choices[0].message.content})
             st.rerun()
 
+# ─── التابات المرئية الحقيقية بـ Streamlit ───────────────────────────────────
+# رسم التابات المرئية بناءً على الـ active_tab
+active = st.session_state.active_tab
+if active:
+    icon_map = {label: icon for icon, label in TABS}
+    icon = icon_map.get(active, "")
+    st.markdown(f"""
+    <div style="display:flex; gap:8px; overflow-x:auto; padding:12px 4px 8px; direction:rtl; scrollbar-width:none;">
+        {''.join([
+            f'<div class="tab-pill {"active" if label == active else "inactive"}">{ico} {label}</div>'
+            for ico, label in TABS
+        ])}
+    </div>
+    """, unsafe_allow_html=True)
+
 st.markdown("---")
 
 # ─── زرار الموقع ─────────────────────────────────────────────────────────────
 loc_col1, loc_col2 = st.columns([3, 1])
 with loc_col2:
-    if st.button("📍 موقعي", use_container_width=True, key="loc_btn"):
+    if st.button("📍 موقعي", use_container_width=True):
         loc = get_geolocation()
         if loc and "coords" in loc:
             st.session_state.location = {
@@ -333,16 +266,16 @@ with loc_col1:
     if st.session_state.location:
         lat = st.session_state.location["lat"]
         lng = st.session_state.location["lng"]
-        st.success(f"📍 موقعك محدد: {lat:.3f}, {lng:.3f}")
+        st.success(f"📍 موقعك محدد ✓")
     else:
-        st.caption("اضغط 📍 لتحديد موقعك وعرض أقرب الخدمات")
+        st.caption("📍 اضغط لتحديد موقعك وعرض أقرب الخدمات")
 
 # ─── عرض المحادثة ─────────────────────────────────────────────────────────────
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# ─── دالة إرسال الرسالة ──────────────────────────────────────────────────────
+# ─── دالة إرسال ──────────────────────────────────────────────────────────────
 def send_message(user_text):
     full_text = user_text
     if st.session_state.location:
@@ -365,17 +298,13 @@ def send_message(user_text):
         temperature=0.7,
         max_tokens=500
     )
-    reply = resp.choices[0].message.content
-    st.session_state.messages.append({"role": "assistant", "content": reply})
+    st.session_state.messages.append({"role": "assistant", "content": resp.choices[0].message.content})
 
-# ─── صندوق الإدخال: نص + ميكروفون ───────────────────────────────────────────
+# ─── الإدخال: نص + ميكروفون ──────────────────────────────────────────────────
 input_col, mic_col = st.columns([6, 1])
-
 with input_col:
     prompt = st.chat_input("اكتب سؤالك هنا...")
-
 with mic_col:
-    st.markdown('<div class="mic-wrapper">', unsafe_allow_html=True)
     audio = mic_recorder(
         start_prompt="🎤",
         stop_prompt="⏹️",
@@ -383,15 +312,12 @@ with mic_col:
         use_container_width=True,
         key="mic"
     )
-    st.markdown('</div>', unsafe_allow_html=True)
 
-# ─── معالجة النص ─────────────────────────────────────────────────────────────
 if prompt:
     with st.spinner("جيزا بتفكر..."):
         send_message(prompt)
     st.rerun()
 
-# ─── معالجة الصوت ────────────────────────────────────────────────────────────
 if audio and audio["id"] != st.session_state.last_audio_id:
     st.session_state.last_audio_id = audio["id"]
     with st.spinner("🎤 جيزا بتسمعك..."):
@@ -409,7 +335,7 @@ if audio and audio["id"] != st.session_state.last_audio_id:
             send_message(voice_text)
             st.rerun()
 
-# ─── زرار مسح ────────────────────────────────────────────────────────────────
+# ─── مسح المحادثة ────────────────────────────────────────────────────────────
 if len(st.session_state.messages) > 1:
     if st.button("🗑️ مسح المحادثة", use_container_width=True):
         st.session_state.messages = [{
