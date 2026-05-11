@@ -1,4 +1,3 @@
-
 import streamlit as st
 from streamlit_mic_recorder import mic_recorder
 from streamlit_js_eval import get_geolocation
@@ -298,34 +297,18 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ─── التابات المرئية التفاعلية ──────────────────────────────────────────────────
+# ─── التابات التفاعلية ─────────────────────────────────────────────────────────
 active = st.session_state.active_tab
 
-# Build styled HTML tabs for visual display
+# Build clickable HTML tabs using query params (primary interaction method)
 tabs_html = '<div class="tabs-scroll">'
 for icon, label in TABS:
     css = "active" if label == active else "inactive"
-    tabs_html += f'<div class="tab-pill {css}" id="pill-{label}">{icon} {label}</div>'
+    tabs_html += f'<a href="?tab_click={label}" target="_self" style="text-decoration:none;"><div class="tab-pill {css}">{icon} {label}</div></a>'
 tabs_html += '</div>'
 st.markdown(tabs_html, unsafe_allow_html=True)
 
-# ─── أزرار التابات المخفية (التفاعل الفعلي) ────────────────────────────────────
-st.markdown("""
-<style>
-/* Completely hide the button row but keep buttons functional */
-.tab-interaction-row {
-    position: fixed !important;
-    top: -9999px !important;
-    left: -9999px !important;
-    width: 1px !important;
-    height: 1px !important;
-    overflow: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
+# Handle tab clicks from query params
 def handle_tab_click(label):
     """Handle tab click by setting active tab and sending prompt to AI"""
     st.session_state.active_tab = label
@@ -349,16 +332,14 @@ def handle_tab_click(label):
     )
     st.session_state.messages.append({"role": "assistant", "content": resp.choices[0].message.content})
 
-# Hidden functional buttons - moved off-screen but still interactive
-with st.container():
-    st.markdown('<div class="tab-interaction-row">', unsafe_allow_html=True)
-    cols = st.columns(len(TABS))
-    for i, (icon, label) in enumerate(TABS):
-        with cols[i]:
-            if st.button(label, key=f"tab_{label}", use_container_width=True):
-                handle_tab_click(label)
-                st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+# Check if a tab was clicked via query params
+if "tab_click" in st.query_params:
+    clicked_tab = st.query_params["tab_click"]
+    if clicked_tab in [t[1] for t in TABS]:
+        handle_tab_click(clicked_tab)
+        # Clear the query param using the proper API
+        st.query_params.clear()
+        st.rerun()
 st.markdown("---")
 
 # ─── زرار الموقع ─────────────────────────────────────────────────────────────
