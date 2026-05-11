@@ -24,9 +24,6 @@ st.markdown("""
     --gold-light: #f0c85a;
     --bg:         #f0f4f8;
 }
-# .tabs-scroll {
-#     display: none !important;
-# }
 * { font-family: 'Cairo', sans-serif !important; box-sizing: border-box; }
 html, body, .stApp { direction: rtl; background: var(--bg); }
 #MainMenu, footer, header, .stDeployButton,
@@ -300,42 +297,67 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# ─── التابات المرئية ──────────────────────────────────────────────────────────
+# ─── التابات المرئية التفاعلية ──────────────────────────────────────────────────
 active = st.session_state.active_tab
+
+# Build styled HTML tabs for visual display
 tabs_html = '<div class="tabs-scroll">'
 for icon, label in TABS:
     css = "active" if label == active else "inactive"
-    tabs_html += f'<div class="tab-pill {css}">{icon} {label}</div>'
+    tabs_html += f'<div class="tab-pill {css}" id="pill-{label}">{icon} {label}</div>'
 tabs_html += '</div>'
 st.markdown(tabs_html, unsafe_allow_html=True)
 
-# أزرار مخفية للتابات
-cols = st.columns(len(TABS))
-for i, (icon, label) in enumerate(TABS):
-    with cols[i]:
-        if st.button(label, key=f"tab_{label}", use_container_width=True):
-            st.session_state.active_tab = label
-            prompt_text = TAB_PROMPTS.get(label, label)
-            full_prompt = prompt_text
-            if st.session_state.location:
-                lat = st.session_state.location["lat"]
-                lng = st.session_state.location["lng"]
-                full_prompt = f"{prompt_text}\n[موقع المستخدم: lat={lat}, lng={lng}]"
-            st.session_state.messages.append({"role": "user", "content": prompt_text})
-            client = get_client()
-            msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
-            for j, m in enumerate(st.session_state.messages):
-                if j == len(st.session_state.messages) - 1:
-                    msgs.append({"role": "user", "content": full_prompt})
-                else:
-                    msgs.append({"role": m["role"], "content": m["content"]})
-            resp = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=msgs, temperature=0.7, max_tokens=700
-            )
-            st.session_state.messages.append({"role": "assistant", "content": resp.choices[0].message.content})
-            st.rerun()
+# ─── أزرار التابات المخفية (التفاعل الفعلي) ────────────────────────────────────
+st.markdown("""
+<style>
+/* Completely hide the button row but keep buttons functional */
+.tab-interaction-row {
+    position: fixed !important;
+    top: -9999px !important;
+    left: -9999px !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
+def handle_tab_click(label):
+    """Handle tab click by setting active tab and sending prompt to AI"""
+    st.session_state.active_tab = label
+    prompt_text = TAB_PROMPTS.get(label, label)
+    full_prompt = prompt_text
+    if st.session_state.location:
+        lat = st.session_state.location["lat"]
+        lng = st.session_state.location["lng"]
+        full_prompt = f"{prompt_text}\n[موقع المستخدم: lat={lat}, lng={lng}]"
+    st.session_state.messages.append({"role": "user", "content": prompt_text})
+    client = get_client()
+    msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for j, m in enumerate(st.session_state.messages):
+        if j == len(st.session_state.messages) - 1:
+            msgs.append({"role": "user", "content": full_prompt})
+        else:
+            msgs.append({"role": m["role"], "content": m["content"]})
+    resp = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=msgs, temperature=0.7, max_tokens=700
+    )
+    st.session_state.messages.append({"role": "assistant", "content": resp.choices[0].message.content})
+
+# Hidden functional buttons - moved off-screen but still interactive
+with st.container():
+    st.markdown('<div class="tab-interaction-row">', unsafe_allow_html=True)
+    cols = st.columns(len(TABS))
+    for i, (icon, label) in enumerate(TABS):
+        with cols[i]:
+            if st.button(label, key=f"tab_{label}", use_container_width=True):
+                handle_tab_click(label)
+                st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 st.markdown("---")
 
 # ─── زرار الموقع ─────────────────────────────────────────────────────────────
