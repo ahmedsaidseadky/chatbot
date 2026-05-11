@@ -6,7 +6,7 @@ import io
 
 # ─── إعداد الصفحة ────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="جيزا - المساعد الذكي",
+    page_title="مساعدك الذكي",
     page_icon="🏛️",
     layout="centered"
 )
