@@ -167,7 +167,7 @@ def send_message(prompt):
             messages_for_api.append({"role": m["role"], "content": m["content"]})
 
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
+        model="llama-3.3-70b-versatile",
         messages=messages_for_api,
         temperature=0.7,
         max_tokens=500
